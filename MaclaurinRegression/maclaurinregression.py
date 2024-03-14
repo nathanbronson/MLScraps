@@ -1,6 +1,8 @@
 import tensorflow as tf
+import statsmodels.api as sm
+import pandas as pd
 
-class MacLaurinRegression(tf.keras.Model):
+class MaclaurinRegressionGD(tf.keras.Model):
     def __init__(self, degree):
         super().__init__()
         self.degree = degree
@@ -17,9 +19,30 @@ class MacLaurinRegression(tf.keras.Model):
     def call(self, x):
         x = tf.repeat(tf.expand_dims(x, -2), self.terms.shape[-2], axis=-2)
         return tf.reduce_sum(tf.math.multiply(self.facs, tf.math.multiply(self.coefs, tf.reduce_prod(tf.math.pow(x, self.terms), axis=-1))), axis=-1)
+    
+    def input_transform(self, x):
+        x = tf.repeat(tf.expand_dims(x, -2), self.terms.shape[-2], axis=-2)
+        return tf.math.multiply(self.facs, tf.reduce_prod(tf.math.pow(x, self.terms), axis=-1))
+
+class MaclaurinRegression(object):
+    def __init__(self, degree):
+        self.degree = degree
+    
+    def fit(self, x, y, print_sum=True):
+        if x.shape[-1] <= 7:
+            varnames = "xyzabcd"[:x.shape[-1]]
+        else:
+            varnames = ["x" + str(n) for n in range(x.shape[-1])]
+        gd = MaclaurinRegressionGD(self.degree)
+        gd.build(x.shape)
+        x = gd.input_transform(x).numpy()
+        reg = sm.OLS(y, pd.DataFrame({"".join([v + "^" + str(int(t)) for v, t in zip(varnames, term)]): x[:, n] for term, n in zip(gd.terms.numpy().tolist(), range(x.shape[-1]))})).fit()
+        if print_sum:
+            print(reg.summary())
+        return reg
 
 if __name__ == "__main__":
-    reg = MacLaurinRegression(20)
+    reg = MaclaurinRegressionGD(20)
     x = (tf.range(40000, dtype=tf.float32) - 20000)/5000
     x = tf.random.shuffle(tf.repeat(x, 500))
     y = tf.sin(x)
