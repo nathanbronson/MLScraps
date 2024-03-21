@@ -35,7 +35,10 @@ class MaclaurinRegression(object):
             varnames = ["x" + str(n) for n in range(x.shape[-1])]
         self.transform.build(x.shape)
         x = self.transform.transform(x)
-        reg = sm.OLS(y, pd.DataFrame({"".join([v + "^" + str(int(t)) for v, t in zip(varnames, term)]): x[:, n] for term, n in zip(self.transform.terms.astype(np.int32).tolist(), range(x.shape[-1]))})).fit()
+        self.reg = sm.OLS(y, pd.DataFrame({"".join([v + "^" + str(int(t)) for v, t in zip(varnames, term)]): x[:, n] for term, n in zip(self.transform.terms.astype(np.int32).tolist(), range(x.shape[-1]))})).fit()
         if print_sum:
-            print(reg.summary())
-        return reg
+            print(self.reg.summary())
+        return self
+    
+    def predict(self, x):
+        return self.reg.predict(self.transform.transform(x))
