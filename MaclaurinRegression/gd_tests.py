@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from maclaurinregression import MaclaurinRegressionGD
+from gd import MaclaurinRegressionGD
 from visualize import plot_reg
 
 TEST = ["sin", "sin2", "sinterm", "add"][2]
