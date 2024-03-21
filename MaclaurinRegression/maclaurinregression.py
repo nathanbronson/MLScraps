@@ -12,8 +12,9 @@ class MaclaurinRegressionGD(tf.keras.Model):
         self.terms = tf.transpose(tf.reshape(tf.concat([tf.expand_dims(t, 0) for t in tf.meshgrid(*tf.split(tf.repeat(tf.expand_dims(tf.range(_d), 0), input_shape[-1], axis=0), num_or_size_splits=input_shape[-1]))], axis=0), (input_shape[-1], -1)), perm=(1, 0))
         self.terms = tf.cast(self.terms[tf.reduce_sum(self.terms, axis=-1) <= _d - 1], tf.float32)
         self.coefs = self.add_weight("coefs", (1, self.terms.shape[0]), dtype=tf.float32)
-        self.facs = tf.pow(tf.cast(tf.stack([tf.math.reduce_prod(tf.range(1,x+1)) for x in range(_d)], axis=0), dtype=tf.float32), -1)
-        self.facs = tf.repeat(self.facs, repeats=tf.unique_with_counts(tf.reduce_sum(self.terms, axis=-1))[2])
+        self.facs = tf.pow(tf.cast(tf.map_fn(lambda x: tf.math.reduce_prod(tf.range(1,x+1)), tf.math.reduce_prod(self.terms, axis=-1)), tf.float32), -1)
+        #self.facs = tf.pow(tf.cast(tf.stack([tf.math.reduce_prod(tf.range(1,x+1)) for x in range(_d)], axis=0), dtype=tf.float32), -1)
+        #self.facs = tf.repeat(self.facs, repeats=tf.unique_with_counts(tf.reduce_sum(self.terms, axis=-1))[2])
         return super().build(input_shape)
     
     def call(self, x):
